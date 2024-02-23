@@ -1,0 +1,24 @@
+---
+- name: Update apt cache
+  become: true
+  ansible.builtin.apt:
+      update_cache: true
+      cache_valid_time: 3600
+
+- name: Install util applications
+  tags: [install]
+  become: true
+  ansible.builtin.apt:
+      name: [dconf-editor, dbus]
+
+- name: Install default applications
+  tags: [install]
+  become: true
+  ansible.builtin.apt:
+      name: '{{ client_default_applications }}'
+
+- name: Install additional applications
+  tags: [install, update]
+  become: true
+  ansible.builtin.apt:
+      name: '{{ client_additional_applications }}'

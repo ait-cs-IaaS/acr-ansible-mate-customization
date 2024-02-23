@@ -1,0 +1,8 @@
+---
+- name: Cleanup Mate autostart
+  tags: [update]
+  become: true
+  ansible.builtin.file:
+      path: /etc/xdg/autostart/{{ item }}
+      state: absent
+  with_items: '{{ client_autostart_absent_list }}'

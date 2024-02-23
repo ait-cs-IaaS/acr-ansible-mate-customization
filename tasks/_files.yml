@@ -1,0 +1,13 @@
+---
+- name: Copy files to host
+  tags: [update]
+  become: true
+  ansible.builtin.copy:
+      src: '{{ client_files_src }}'
+      dest:
+          '{{ client_files_dest | default("/home/" + customize_user +
+          "/Desktop/") }}'
+      mode: preserve
+      owner: '{{ customize_user }}'
+      group: '{{ customize_user }}'
+  when: client_files_src is defined

@@ -1,0 +1,17 @@
+---
+- name: Copy desktop-background to host
+  tags: [config]
+  become: true
+  ansible.builtin.copy:
+      src: '{{ client_desktop_bg_src }}'
+      dest: /usr/share/backgrounds/{{ client_desktop_bg_src | basename }}
+      mode: '0644'
+      owner: '{{ customize_user }}'
+
+- name: Set desktop-background
+  tags: [config]
+  become: true
+  become_user: '{{ customize_user }}'
+  community.general.dconf:
+      key: /org/mate/desktop/background/picture-filename
+      value: "'/usr/share/backgrounds/{{ client_desktop_bg_src | basename }}'"
