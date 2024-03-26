@@ -2,36 +2,36 @@
 - name: Set customize_user
   when: customize_user is not defined
   block:
-      - name: Get currently installed username
-        ansible.builtin.shell:
-            cmd: |
-                set -o pipefail
-                cut -d: -f1,3 /etc/passwd | egrep ':[0-9]{4}$' | cut -d: -f1
-        args:
-            executable: /bin/bash
-        register: _customize_user
-        changed_when: false
+    - name: Get currently installed username
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          cut -d: -f1,3 /etc/passwd | egrep ':[0-9]{4}$' | cut -d: -f1
+      args:
+        executable: /bin/bash
+      register: _customize_user
+      changed_when: false
 
-      - name: Set user to be used for customization
-        ansible.builtin.set_fact:
-            customize_user: '{{ _customize_user.stdout }}'
+    - name: Set user to be used for customization
+      ansible.builtin.set_fact:
+        customize_user: "{{ _customize_user.stdout }}"
 
 - name: Install basic software
   ansible.builtin.include_tasks:
-      file: _install.yml
+    file: _install.yml
 
 - name: Change dconf configuration
   ansible.builtin.include_tasks:
-      file: _dconf.yml
+    file: _dconf.yml
 
 - name: Change desktop background
   ansible.builtin.include_tasks:
-      file: _background.yml
+    file: _background.yml
 
 - name: Change autostart
   ansible.builtin.include_tasks:
-      file: _autostart.yml
+    file: _autostart.yml
 
 - name: Manage files
   ansible.builtin.include_tasks:
-      file: _files.yml
+    file: _files.yml
