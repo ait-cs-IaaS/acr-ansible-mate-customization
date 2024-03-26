@@ -2,10 +2,10 @@
 - name: Get current panel list
   tags: [update]
   become: true
-  become_user: '{{ customize_user }}'
+  become_user: "{{ customize_user }}"
   community.general.dconf:
-      key: /org/mate/panel/general/object-id-list
-      state: read
+    key: /org/mate/panel/general/object-id-list
+    state: read
   register: panel_list
 
 # The following block is necessary because the default profile is not loaded
@@ -15,77 +15,75 @@
 - name: Init default profile
   tags: [update]
   become: true
-  become_user: '{{ customize_user }}'
+  become_user: "{{ customize_user }}"
   when: panel_list.value is none
   block:
-      - name: Copy profile to host
-        ansible.builtin.copy:
-            src: default_profile
-            dest: /tmp/default_profile
-            mode: preserve
+    - name: Copy profile to host
+      ansible.builtin.copy:
+        src: default_profile
+        dest: /tmp/default_profile
+        mode: preserve
 
-      - name: Load panels config
-        become: true
-        become_user: '{{ customize_user }}'
-        ansible.builtin.shell: >
-            echo user-db:user > profile ; DCONF_PROFILE="$(pwd)/profile"
-            dbus-launch dconf load / < /tmp/default_profile
-        args:
-            chdir: /home/{{ customize_user }}/
-        changed_when: true
+    - name: Load panels config
+      become: true
+      become_user: "{{ customize_user }}"
+      ansible.builtin.shell: >
+        echo user-db:user > profile ; DCONF_PROFILE="$(pwd)/profile"
+        dbus-launch dconf load / < /tmp/default_profile
+      args:
+        chdir: /home/{{ customize_user }}/
+      changed_when: true
 
-      - name: Activate panels config
-        become: true
-        become_user: '{{ customize_user }}'
-        ansible.builtin.shell: dconf load / < /tmp/default_profile
-        args:
-            chdir: /home/{{ customize_user }}/
-        changed_when: true
+    - name: Activate panels config
+      become: true
+      become_user: "{{ customize_user }}"
+      ansible.builtin.shell: dconf load / < /tmp/default_profile
+      args:
+        chdir: /home/{{ customize_user }}/
+      changed_when: true
 
-      - name: Remove tmp file
-        ansible.builtin.file:
-            path: /tmp/default_profile
-            state: absent
+    - name: Remove tmp file
+      ansible.builtin.file:
+        path: /tmp/default_profile
+        state: absent
 
-      - name: Get current panel list
-        community.general.dconf:
-            key: /org/mate/panel/general/object-id-list
-            state: read
-        register: original_panel_list
+    - name: Get current panel list
+      community.general.dconf:
+        key: /org/mate/panel/general/object-id-list
+        state: read
+      register: original_panel_list
 
 - name: Apply custom dconf settings
   tags: [update]
   become: true
-  become_user: '{{ customize_user }}'
+  become_user: "{{ customize_user }}"
   ansible.builtin.command:
-      cmd: dconf load /
-      stdin: '{{ client_dconf_settings | to_dconf_config }}'
+    cmd: dbus-launch dconf load /
+    stdin: "{{ client_dconf_settings | to_dconf_config }}"
   changed_when: true
 
 - name: Add new panel object in dconf
   tags: [update]
   become: true
-  become_user: '{{ customize_user }}'
+  become_user: "{{ customize_user }}"
   ansible.builtin.command:
-      cmd: dconf load /
-      stdin: '{{ panel_object.value | launcher_object(name=panel_object.key) }}'
-  loop: '{{ client_launcher_objects | dict2items }}'
+    cmd: dconf load /
+    stdin: "{{ panel_object.value | launcher_object(name=panel_object.key) }}"
+  loop: "{{ client_launcher_objects | dict2items }}"
   loop_control:
-      loop_var: panel_object
+    loop_var: panel_object
   changed_when: true
 
 - name: Concat original panel list with new launcher objects
   tags: [update]
   ansible.builtin.set_fact:
-      new_panel_list:
-          '{{ panel_list.value | default(original_panel_list.value) | from_yaml
-          | union(client_launcher_objects.keys()) }}'
+    new_panel_list: "{{ panel_list.value | default(original_panel_list.value) | from_yaml | union(client_launcher_objects.keys()) }}"
 
 - name: Set new panel list
   tags: [update]
   become: true
-  become_user: '{{ customize_user }}'
+  become_user: "{{ customize_user }}"
   community.general.dconf:
-      key: /org/mate/panel/general/object-id-list
-      value: '{{ new_panel_list }}'
+    key: /org/mate/panel/general/object-id-list
+    value: "{{ new_panel_list }}"
   when: new_panel_list is defined
