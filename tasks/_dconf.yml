@@ -37,7 +37,7 @@
     - name: Activate panels config
       become: true
       become_user: "{{ customize_user }}"
-      ansible.builtin.shell: dconf load / < /tmp/default_profile
+      ansible.builtin.shell: dbus-launch dconf load / < /tmp/default_profile
       args:
         chdir: /home/{{ customize_user }}/
       changed_when: true
@@ -67,7 +67,7 @@
   become: true
   become_user: "{{ customize_user }}"
   ansible.builtin.command:
-    cmd: dconf load /
+    cmd: dbus-launch dconf load /
     stdin: "{{ panel_object.value | launcher_object(name=panel_object.key) }}"
   loop: "{{ client_launcher_objects | dict2items }}"
   loop_control:
