@@ -1,6 +1,5 @@
 ---
 - name: Get current panel list
-  tags: [update]
   become: true
   become_user: "{{ customize_user }}"
   community.general.dconf:
@@ -13,7 +12,6 @@
 # initiate this manually.
 
 - name: Init default profile
-  tags: [update]
   become: true
   become_user: "{{ customize_user }}"
   when: panel_list.value is none
@@ -29,7 +27,9 @@
       become_user: "{{ customize_user }}"
       ansible.builtin.shell: >
         echo user-db:user > profile ; DCONF_PROFILE="$(pwd)/profile"
-        dbus-launch dconf load / < /tmp/default_profile
+        dconf load / < /tmp/default_profile
+      environment:
+        DISPLAY: ":0"
       args:
         chdir: /home/{{ customize_user }}/
       changed_when: true
@@ -37,7 +37,9 @@
     - name: Activate panels config
       become: true
       become_user: "{{ customize_user }}"
-      ansible.builtin.shell: dbus-launch dconf load / < /tmp/default_profile
+      ansible.builtin.shell: dconf load / < /tmp/default_profile
+      environment:
+        DISPLAY: ":0"
       args:
         chdir: /home/{{ customize_user }}/
       changed_when: true
@@ -54,36 +56,41 @@
       register: original_panel_list
 
 - name: Apply custom dconf settings
-  tags: [update]
   become: true
   become_user: "{{ customize_user }}"
-  ansible.builtin.command:
-    cmd: dbus-launch dconf load /
+  ansible.builtin.shell:
+    cmd: dconf load /
     stdin: "{{ client_dconf_settings | to_dconf_config }}"
+  environment:
+    DISPLAY: ":0"
   changed_when: true
 
 - name: Add new panel object in dconf
-  tags: [update]
   become: true
   become_user: "{{ customize_user }}"
-  ansible.builtin.command:
-    cmd: dbus-launch dconf load /
-    stdin: "{{ panel_object.value | launcher_object(name=panel_object.key) }}"
+  ansible.builtin.shell: | 
+    dconf load / << EOF 
+    {{ panel_object.value | launcher_object(name=panel_object.key) }} 
+    EOF
+  environment:
+    DISPLAY: ":0"
   loop: "{{ client_launcher_objects | dict2items }}"
   loop_control:
     loop_var: panel_object
   changed_when: true
 
 - name: Concat original panel list with new launcher objects
-  tags: [update]
   ansible.builtin.set_fact:
     new_panel_list: "{{ panel_list.value | default(original_panel_list.value) | from_yaml | union(client_launcher_objects.keys()) }}"
 
 - name: Set new panel list
-  tags: [update]
   become: true
   become_user: "{{ customize_user }}"
-  community.general.dconf:
-    key: /org/mate/panel/general/object-id-list
-    value: "{{ new_panel_list }}"
+  ansible.builtin.shell: | 
+    dconf load /org/mate/panel/ << EOF 
+    [general]
+    object-id-list={{ new_panel_list }} 
+    EOF
+  environment:
+    DISPLAY: ":0"
   when: new_panel_list is defined
