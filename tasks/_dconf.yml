@@ -27,7 +27,7 @@
       become_user: "{{ customize_user }}"
       ansible.builtin.shell: >
         echo user-db:user > profile ; DCONF_PROFILE="$(pwd)/profile"
-        dconf load / < /tmp/default_profile
+        dbus-launch dconf load / < /tmp/default_profile
       environment:
         DISPLAY: ":0"
       args:
@@ -37,7 +37,7 @@
     - name: Activate panels config
       become: true
       become_user: "{{ customize_user }}"
-      ansible.builtin.shell: dconf load / < /tmp/default_profile
+      ansible.builtin.shell: dbus-launch dconf load / < /tmp/default_profile
       environment:
         DISPLAY: ":0"
       args:
@@ -59,7 +59,7 @@
   become: true
   become_user: "{{ customize_user }}"
   ansible.builtin.shell:
-    cmd: dconf load /
+    cmd: dbus-launch dconf load /
     stdin: "{{ client_dconf_settings | to_dconf_config }}"
   environment:
     DISPLAY: ":0"
@@ -69,7 +69,7 @@
   become: true
   become_user: "{{ customize_user }}"
   ansible.builtin.shell: | 
-    dconf load / << EOF 
+    dbus-launch dconf load / << EOF 
     {{ panel_object.value | launcher_object(name=panel_object.key) }} 
     EOF
   environment:
@@ -87,7 +87,7 @@
   become: true
   become_user: "{{ customize_user }}"
   ansible.builtin.shell: | 
-    dconf load /org/mate/panel/ << EOF 
+    dbus-launch dconf load /org/mate/panel/ << EOF 
     [general]
     object-id-list={{ new_panel_list }} 
     EOF
