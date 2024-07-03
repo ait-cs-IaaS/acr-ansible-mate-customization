@@ -9,9 +9,12 @@
       owner: '{{ customize_user }}'
 
 - name: Set desktop-background
-  tags: [config]
   become: true
-  become_user: '{{ customize_user }}'
-  community.general.dconf:
-      key: /org/mate/desktop/background/picture-filename
-      value: "'/usr/share/backgrounds/{{ client_desktop_bg_src | basename }}'"
+  become_user: "{{ customize_user }}"
+  ansible.builtin.shell: | 
+    dbus-launch dconf load /org/mate/desktop/ << EOF 
+    [background]
+    picture-filename='/usr/share/backgrounds/{{ client_desktop_bg_src | basename }}'
+    EOF
+  environment:
+    DISPLAY: ":0"
