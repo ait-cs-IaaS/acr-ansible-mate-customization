@@ -62,7 +62,7 @@ def format_dconf_value(key, value):
 
     if isinstance(value, bool):
         # Convert Bollean to string
-        value = f"{str(value).lower()}"
+        return f"{key}={str(value).lower()}"
 
     if isinstance(value, int) or isinstance(value, list):
         # Values that cannot have quotes
